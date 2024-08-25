@@ -1,0 +1,54 @@
+import { Body, Controller, Get, Param, Post, Req, Res, Session, UseInterceptors } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { SignInDto, SignUpDto } from './dto';
+import { Public } from './decorator/public.decorator';
+import { Response } from 'express';
+import { success, fail } from './html';
+
+@Controller('auth')
+export class AuthController {
+    constructor(private authService: AuthService) {}
+
+    @Public()
+    @Post('/signup')
+    async signUp(@Body() dto: SignUpDto) {
+        const result = await this.authService.signUp(dto);
+        return result;
+    }
+
+    @Public()
+    @Post('/signin')
+    async signIn(@Body() dto: SignInDto, @Session() session: Record<string, any>) {
+        const { access_token, refresh_token } = await this.authService.signIn(dto, session);
+
+        session.refresh_token = refresh_token; 
+
+        return { accessToken: access_token };
+    }
+
+    @Public()
+    @Post('/logout/:uuid')
+    async logout(@Param('uuid') uuid: string) {
+        await this.authService.logOut(uuid);
+
+        return { message: 'Đăng xuất thành công' };
+    }
+
+    @Public()
+    @Get('verify/:userUuid/:token')
+    async verifyMail(@Res() res: Response, @Param('token') token: any, @Param('userUuid') userUuid: any) {
+        const status = await this.authService.verifyMail(userUuid, token);
+
+        if (status) {
+            return res.send(success());
+        } else res.send(fail());
+    }
+
+    @Public()
+    @Get('resend-verify-mail/:userUuid')
+    async resendVerifyMail(@Param('userUuid') userUuid: string) {
+        const data = await this.authService.resendVerifyMail(userUuid);
+
+        return data;
+    }
+}

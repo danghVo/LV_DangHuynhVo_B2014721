@@ -1,39 +1,67 @@
-from data.data_loader import DataLoader 
-from model.hierarchical import Hierarchical
-from model.k_means import K_Means
-import sys
 import os
+import redis
+import time
+import json
+import base64
+
+from handler.kmeans import kmeans
+from handler.hierarchical import hierarchical
+
+
+port = int(os.environ.get("PORT", 5000))
+
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
 
 if __name__ == "__main__":
-    algorithm = sys.argv[1]
+    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+    pub = r.pubsub()
+    pub.subscribe("kmeans")
+    pub.subscribe("hierarchical")
 
-    if algorithm == "kmeans":
-        cluster = int(sys.argv[2])
-        iteration = int(sys.argv[3])
-        distance_type = sys.argv[4]
-        csv_file_path = sys.argv[5]
+    print("Start listening to clustering channel")
 
-        data_loader = DataLoader()
-        # print the current path of main.py
+    while True: 
+        data = pub.get_message()
+        if data: 
+            message = data
+            if message:
+                if(message["channel"] == b"kmeans"):
+                    print("Kmeans message received")
 
-        df = data_loader.load_data(csv_file_path=csv_file_path)
+                    try:
+                        if(type(message["data"]) == bytes):
+                            payload = json.loads(message["data"])
 
-        kmeans = K_Means(cluster, iteration)
+                            response = kmeans(payload)
+                            print("Kmeans processed successfully")
 
-        kmeans.fit(data=df, distance_type=distance_type, data_name=data_loader.data_name)
+                            # Publish response to channel
+                            r.publish("kmeans response", base64.b64encode(response.encode("utf-8")))
+                    except Exception as e:
+                        print(e)
+                        print("Kmeans processed unsuccessfully")
 
-        print(kmeans.toJson(additionInfo={ "header": data_loader.header, "data_name": data_loader.data_name }))
-    elif algorithm == "hierarchical":
-        link_method = sys.argv[2]
-        distance_type = sys.argv[3]
-        csv_file_path = sys.argv[4]
+                        repsonse = json.dumps({ "error": "Internal server error" })
+                        r.publish("kmeans response", base64.b64encode(repsonse))
+                elif(message["channel"] == b"hierarchical"):
+                    print("Hierarchical message received")
 
-        data_loader = DataLoader()
+                    try:
+                        if(type(message["data"]) == bytes):
+                            payload = json.loads(message["data"])
 
-        df = data_loader.load_data(csv_file_path=csv_file_path)
+                            response = hierarchical(payload)
+                            print("Hierarchical processed successfully")
 
-        hierarchical = Hierarchical(linked_method=link_method)
+                            # Publish response to channel
+                            r.publish("hierarchical response", base64.b64encode(response.encode("utf-8")))
+                    except Exception as e:
+                        print(e)
+                        print("Hierarchical processed unsuccessfully")
 
-        hierarchical.fit(data=df, distance_type=distance_type, data_name=data_loader.data_name)
+                        repsonse = json.dumps({ "error": "Internal server error" })
+                        r.publish("hierarchical response", base64.b64encode(repsonse))
+            
+        time.sleep(1)
 
-        print(hierarchical.toJson(additionInfo={ "header": data_loader.header, "data_name": data_loader.data_name }))

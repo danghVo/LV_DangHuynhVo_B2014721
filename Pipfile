@@ -11,6 +11,9 @@ scikit-learn = "*"
 seaborn = "*"
 matplotlib = "*"
 json-numpy = "*"
+flask = "*"
+requests = "*"
+redis = "*"
 
 [dev-packages]
 

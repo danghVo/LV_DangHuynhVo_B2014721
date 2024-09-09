@@ -1,54 +1,40 @@
-import { Body, Controller, Get, Param, Post, Req, Res, Session, UseInterceptors } from '@nestjs/common';
+ import { Body, Controller, Post, Session,  } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto, SignUpDto } from './dto';
 import { Public } from './decorator/public.decorator';
-import { Response } from 'express';
-import { success, fail } from './html';
+import { MessagePattern } from '@nestjs/microservices';
 
-@Controller('auth')
+@Controller()
 export class AuthController {
     constructor(private authService: AuthService) {}
 
-    @Public()
-    @Post('/signup')
-    async signUp(@Body() dto: SignUpDto) {
-        const result = await this.authService.signUp(dto);
-        return result;
+    @MessagePattern({ cmd: "signup" })
+    async signUp(@Body() data: SignUpDto) {
+        let { isValid, error } = await this.authService.validSignUpPayload(data);
+
+        if (isValid) {
+            const result = await this.authService.signUp(data);
+            
+            return { status: 'success', data: result };
+        } else return { status: 'fail', data: null, error };  
     }
 
-    @Public()
-    @Post('/signin')
-    async signIn(@Body() dto: SignInDto, @Session() session: Record<string, any>) {
-        const { access_token, refresh_token } = await this.authService.signIn(dto, session);
+    @MessagePattern({ cmd: "signin" })
+    async signIn(@Body() data: SignInDto) {
+        const { access_token, refresh_token } = await this.authService.signIn(data);
 
-        session.refresh_token = refresh_token; 
-
-        return { accessToken: access_token };
+        return { accessToken: access_token, refreshToken: refresh_token };
     }
 
-    @Public()
-    @Post('/logout/:uuid')
-    async logout(@Param('uuid') uuid: string) {
-        await this.authService.logOut(uuid);
+    @MessagePattern({ cmd: "logout" })
+    async logout(@Session() session: Record<string, any>) {
+        session.destroy();
 
         return { message: 'Đăng xuất thành công' };
     }
 
-    @Public()
-    @Get('verify/:userUuid/:token')
-    async verifyMail(@Res() res: Response, @Param('token') token: any, @Param('userUuid') userUuid: any) {
-        const status = await this.authService.verifyMail(userUuid, token);
-
-        if (status) {
-            return res.send(success());
-        } else res.send(fail());
-    }
-
-    @Public()
-    @Get('resend-verify-mail/:userUuid')
-    async resendVerifyMail(@Param('userUuid') userUuid: string) {
-        const data = await this.authService.resendVerifyMail(userUuid);
-
-        return data;
+    @MessagePattern({ cmd: "refresh-token" })
+    async refreshToken(data: { refresh_token: string }) {
+        return await this.authService.refreshAccessToken(data.refresh_token);
     }
 }

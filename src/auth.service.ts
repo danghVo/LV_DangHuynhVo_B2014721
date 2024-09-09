@@ -19,18 +19,9 @@ export class AuthService {
         return await this.jwt.signAsync(payload, { secret, expiresIn: expiresIn });
     }
 
-    async refreshAccessToken(uuid: string) {
+    async refreshAccessToken(refreshToken: string) {
         try {
-            const user = await this.prisma.user.findUnique({
-                where: { uuid },
-                select: { refreshToken: true },
-            });
-
-            if (!user.refreshToken) {
-                throw new UnauthorizedException('Unauthorized');
-            }
-
-            const payload = await this.jwt.verifyAsync(user.refreshToken, {
+            const payload = await this.jwt.verifyAsync(refreshToken, {
                 secret: this.config.get('JWT_SECRET_KEY_REFRESH'),
             });
 
@@ -47,46 +38,43 @@ export class AuthService {
         }
     }
 
-    async signUp(signUpDto: SignUpDto) {
+    async validSignUpPayload(signUpDto: SignUpDto): Promise<{ isValid: boolean; error: string }> {
         const isUserExisted = await this.prisma.user.findUnique({
             where: { email: signUpDto.email },
         });
 
         if (isUserExisted) {
-            throw new ForbiddenException('Email đã được đăng ký');
+            return { isValid: false, error: 'Email đã được đăng ký' };
+        }
+        
+        if (signUpDto.password !== signUpDto.confirmPassword) {
+            return { isValid: false, error: 'Mật khẩu không khớp'};
         }
 
-        try {
-            if (signUpDto.password !== signUpDto.confirmPassword) {
-                throw new ForbiddenException('Mật khẩu không khớp');
-            }
+        return { isValid: true, error: '' };
+    }
 
-            // hash password
-            const hashPassword = await argon2.hash(signUpDto.password);
+    async signUp(signUpDto: SignUpDto) {
+        // hash password
+        const hashPassword = await argon2.hash(signUpDto.password);
 
-            const verifyToken = randomBytes(64).toString('hex');
+        const verifyToken = randomBytes(64).toString('hex');
 
-            // create user
-            const newUser = await this.prisma.user.create({
-                data: {
-                    email: signUpDto.email,
-                    password: hashPassword,
-                    name: signUpDto.name,
-                    role: signUpDto.role,
-                    age: signUpDto.age,
-                    verifyToken,
-                },
-            });
+        // create user
+        const newUser = await this.prisma.user.create({
+            data: {
+                email: signUpDto.email,
+                password: hashPassword,
+                name: signUpDto.name,
+                role: signUpDto.role,
+                age: signUpDto.age,
+                verifyToken,
+            },
+        });
 
-            this.deleteUnverifyUser(newUser.uuid);
+        this.deleteUnverifyUser(newUser.uuid);
 
-            // await this.mailService.mailConfirm(signUpDto.email, newUser.uuid, verifyToken);
-
-            return { uuid: newUser.uuid };
-        } catch (error) {
-            console.log(error);
-            throw new ForbiddenException('Có lỗi xảy ra, vui lòng thử lại sau');
-        }
+        return { uuid: newUser.uuid, email: newUser.email, name: newUser.name };
     }
 
     async deleteUnverifyUser(uuid: string) {
@@ -111,7 +99,7 @@ export class AuthService {
         });
     }
 
-    async signIn(signInDto: SignInDto, session: Record<string, any>) {
+    async signIn(signInDto: SignInDto) {
         try {
             // checking if user exists
             const userExisted = await this.prisma.user.findUniqueOrThrow({
@@ -148,23 +136,6 @@ export class AuthService {
                     throw new ForbiddenException('Email không tồn tại');
                 }
             } else throw new ForbiddenException(error.message);
-        }
-    }
-
-    async logOut(uuid: string) {
-        try {
-            await this.prisma.user.update({
-                where: { uuid: uuid },
-                data: {
-                    refreshToken: null,
-                },
-            });
-        } catch (error) {
-            if (error instanceof PrismaClientKnownRequestError) {
-                if (error.code === 'P2025') {
-                    throw new Error('Người dùng không tồn tại');
-                }
-            } else throw new ForbiddenException('Lỗi không xác định');
         }
     }
 

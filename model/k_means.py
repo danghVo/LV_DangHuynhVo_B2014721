@@ -21,6 +21,7 @@ class K_Means:
         prev_centroids = None
         iteration = 0
         labels = []
+        labelsInName = []
         self.iteration_data = []
         distanceFormula = Distance(distance_type).calculate
 
@@ -48,6 +49,10 @@ class K_Means:
         self.labels = labels
         self.centroids = centroids
         self.iteration_n = iteration 
+        self.labelsInName = labelsInName
+
+    def getPlotData(self):
+        return self.init_centroid, self.centroids, self.labels, self.labelsInName
 
     def toJson(self, additionInfo = {}):
         """ Convert the clustering data trained to json format

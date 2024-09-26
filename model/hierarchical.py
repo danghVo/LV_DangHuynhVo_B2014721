@@ -81,6 +81,9 @@ class Hierarchical:
 
         self.labels = labels
 
+    def getGraphData(self):
+        return self.iteration_data[0]["distance_matrix"], self.linked_method
+
     def toJson(self, additionInfo = {}):
         """ Convert the clustering data trained to json format
 

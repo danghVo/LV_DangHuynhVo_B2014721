@@ -1,6 +1,7 @@
 from valid.valid_request import valid_kmeans_request
 from data.data_loader import DataLoader 
 from model.k_means import K_Means
+from draw.kmeans import draw_kmeans_graph                                   
 
 def kmeans(payload):
     try: 
@@ -18,9 +19,11 @@ def kmeans(payload):
 
             kmeans.fit(data=df, distance_type=distance_type, data_name=data_loader.data_name)
 
+            draw_kmeans_graph(*kmeans.getPlotData())
+
             return kmeans.toJson(additionInfo={ "header": data_loader.header, "data_name": data_loader.data_name })
         else:
             return "Invalid parameter"
     except Exception as e:
-        print(e)
+        print(("Kmeans handler error ", e))
         return "Internal server error"

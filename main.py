@@ -4,9 +4,8 @@ import time
 import json
 import base64
 
-from handler.kmeans import kmeans
-from handler.hierarchical import hierarchical
-
+from handler.kmeans import kmeans as kmeans_handler
+from handler.hierarchical import hierarchical as hierarchical_handler
 
 port = int(os.environ.get("PORT", 5000))
 
@@ -33,7 +32,7 @@ if __name__ == "__main__":
                         if(type(message["data"]) == bytes):
                             payload = json.loads(message["data"])
 
-                            response = kmeans(payload)
+                            response = kmeans_handler(payload)
                             print("Kmeans processed successfully")
 
                             # Publish response to channel
@@ -51,8 +50,10 @@ if __name__ == "__main__":
                         if(type(message["data"]) == bytes):
                             payload = json.loads(message["data"])
 
-                            response = hierarchical(payload)
+                            response = hierarchical_handler(payload)
                             print("Hierarchical processed successfully")
+
+
 
                             # Publish response to channel
                             r.publish("hierarchical response", base64.b64encode(response.encode("utf-8")))

@@ -5,8 +5,6 @@ def valid_kmeans_request(payload):
     try:
         isValid = True
 
-        print(type(payload))
-
         cluster = payload["cluster"]
         iteration = payload["iteration"]
         distance_type = payload["distanceType"]

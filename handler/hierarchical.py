@@ -1,6 +1,7 @@
 from valid.valid_request import valid_hierarchical_request
 from data.data_loader import DataLoader
 from model.hierarchical import Hierarchical
+from draw.hierarchical import draw_hierarchical
 
 def hierarchical(payload):
     try:
@@ -16,6 +17,10 @@ def hierarchical(payload):
             hierarchical = Hierarchical(linked_method=link_method)
 
             hierarchical.fit(data=df, distance_type=distance_type, data_name=data_loader.data_name)
+
+            print(hierarchical.getGraphData())
+
+            # draw_hierarchical(*hierarchical.getGraphData())
 
             return hierarchical.toJson(additionInfo={ "header": data_loader.header, "data_name": data_loader.data_name })
         else:

@@ -1,25 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthModule } from './auth.module';
-import { Transport } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
-import * as session from 'express-session';
-import { Logger } from '@nestjs/common';
+import {
+  BaseRpcExceptionFilter,
+  RpcException,
+  Transport,
+} from '@nestjs/microservices';
+import { ServiceExceptionFilter } from './exception/SerivceExceptionFilter';
 
 async function bootstrap() {
-  const config = new ConfigService();
-  const tcpPort = config.get('SERVICE_TCP_PORT');
-  const host = config.get('SERVICE_HOST');
-  console.log(`host: ${host}, tcp post: ${tcpPort}`);
-
   const service = await NestFactory.createMicroservice(AuthModule, {
     transport: Transport.TCP,
     options: {
-      host,
-      port: tcpPort,
+      host: process.env.HOST ?? 'localhost',
+      port: 4001,
       retryAttempts: 5,
     },
   });
 
+  service.useGlobalFilters(new ServiceExceptionFilter());
+
   await service.listen();
 }
+
 bootstrap();

@@ -3,21 +3,26 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
-import { APP_GUARD } from '@nestjs/core';
-import { PrismaModule } from './prisma/prisma.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
-    PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     JwtModule.register({}),
+    ClientsModule.register([
+      {
+        name: 'REDIS_SERVICE',
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST ?? 'localhost',
+          port: 6379,
+        },
+      },
+    ]),
   ],
   controllers: [AuthController],
-  providers: [
-      AuthService,
-  ],
+  providers: [AuthService],
 })
 export class AuthModule {}

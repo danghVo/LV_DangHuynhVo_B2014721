@@ -7,7 +7,7 @@ export class RedisPub {
 
   constructor() {
     this.client = redis.createClient({
-      url: 'redis://localhost:6379',
+      url: `redis://${process.env.REDIS_HOST}:6379`,
       pingInterval: 1000,
     });
     this.connect();

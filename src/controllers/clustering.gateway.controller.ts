@@ -10,12 +10,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/decorator/public.decorator';
-import { HierarchicalDto } from 'src/dto/clustering/Hierarchical';
+import { HierarchicalDto } from 'src/dto/clustering/hierarchical';
 import { KmeansDto } from 'src/dto/clustering/kmeans.dto';
-import { decodedBase64 } from 'src/Util/DecodedBase64';
-import { LoggerUtil } from 'src/Util/Logger';
-import { RedisPub } from 'src/Util/RedisPub';
-import { RedisSub } from 'src/Util/RedisSub';
+import { decodedBase64 } from 'src/utils/DecodedBase64';
+import { LoggerUtil } from 'src/utils/Logger';
+import { RedisPub } from 'src/utils/RedisPub';
+import { RedisSub } from 'src/utils/RedisSub';
 
 @Controller('clustering')
 export class ClusteringGatewayController {
@@ -23,7 +23,6 @@ export class ClusteringGatewayController {
   private redisPub: RedisPub;
 
   constructor() {
-    // @Inject("CLUSTERING_SERVICE") private readonly clusteringClient: ClientProxy
     this.redisSub = new RedisSub();
     this.redisPub = new RedisPub();
   }
@@ -42,7 +41,6 @@ export class ClusteringGatewayController {
     }
   }
 
-  @Public()
   @Post('/kmeans')
   @UseInterceptors(FileInterceptor('csvFile'))
   async kmeans(
@@ -57,19 +55,22 @@ export class ClusteringGatewayController {
         JSON.stringify({ ...payload, buffer: file.buffer.toString('base64') }),
       );
 
-      const response = await this.redisSub.subscribe('kmeans response');
+      const responseInBase64 = await this.redisSub.subscribe('kmeans response');
+      const repsonse = decodedBase64(responseInBase64);
+
+      if (!repsonse.startsWith('{')) {
+        return { data: repsonse };
+      }
 
       return {
-        message: 'Send success',
-        data: JSON.parse(decodedBase64(response)),
+        data: JSON.parse(repsonse),
       };
     } catch (error) {
       LoggerUtil.error(error, 'Kmeans Process');
-      return { message: error };
+      return { data: error };
     }
   }
 
-  @Public()
   @Post('/hierarchical')
   @UseInterceptors(FileInterceptor('csvFile'))
   async hierarchical(
@@ -84,15 +85,22 @@ export class ClusteringGatewayController {
         JSON.stringify({ ...payload, buffer: file.buffer.toString('base64') }),
       );
 
-      const response = await this.redisSub.subscribe('hierarchical response');
+      const responseInBase64 = await this.redisSub.subscribe(
+        'hierarchical response',
+      );
+      const repsonse = decodedBase64(responseInBase64);
+
+      if (!repsonse.startsWith('{')) {
+        return { data: repsonse };
+      }
 
       return {
-        message: 'Send success',
-        data: JSON.parse(decodedBase64(response)),
+        message: 'Success',
+        data: JSON.parse(repsonse),
       };
     } catch (error) {
       LoggerUtil.error(error, 'Hierarchical Process');
-      return { message: error };
+      return { data: error };
     }
   }
 }

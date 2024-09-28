@@ -1,16 +1,13 @@
-import { IsEnum, IsNotEmpty } from "class-validator";
+import { IsEnum, IsNotEmpty } from 'class-validator';
 
 export class KmeansDto {
-    @IsNotEmpty()
-    cluster: number;
+  @IsNotEmpty()
+  cluster: number;
 
-    @IsNotEmpty()
-    iteration: number;
+  @IsNotEmpty()
+  iteration: number;
 
-    @IsNotEmpty()
-    @IsEnum(["euclidean", "manhattan"])
-    distanceType: string;
-
-    @IsNotEmpty()
-    csvFile: File;
-}   
+  @IsNotEmpty()
+  @IsEnum(['euclidean', 'manhattan'])
+  distanceType: string;
+}

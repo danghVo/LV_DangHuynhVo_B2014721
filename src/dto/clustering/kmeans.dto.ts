@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class KmeansDto {
   @IsNotEmpty()
@@ -10,4 +10,7 @@ export class KmeansDto {
   @IsNotEmpty()
   @IsEnum(['euclidean', 'manhattan'])
   distanceType: string;
+
+  @IsOptional()
+  initCentroidLine: string[];
 }

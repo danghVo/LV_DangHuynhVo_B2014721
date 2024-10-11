@@ -1,3 +1,4 @@
+import { SocketModule } from 'src/socket/socket.module';
 import { Module } from '@nestjs/common';
 import { AuthGatewayController } from './controllers/auth.gateway.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -10,12 +11,14 @@ import { ClassGatewayController } from './controllers/class.gateway.controller';
 import { ClassManagementGatewayController } from './controllers/classManagement.controller';
 import { UserController } from './controllers/user.gateway.controller';
 import { PostGatewayController } from './controllers/post.gateway.controller';
+import { SocketForwardingController } from './controllers/socket.forwarding.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    SocketModule,
     JwtModule.register({}),
     ClientsModule.register([
       {
@@ -32,14 +35,6 @@ import { PostGatewayController } from './controllers/post.gateway.controller';
         options: {
           host: process.env.REDIS_HOST ?? 'localhost',
           port: 6379,
-        },
-      },
-      {
-        name: 'MAIL_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.MAIL_HOST ?? 'localhost',
-          port: 4005,
         },
       },
       {
@@ -74,6 +69,14 @@ import { PostGatewayController } from './controllers/post.gateway.controller';
           port: 4007,
         },
       },
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.NOTIFICATION_HOST ?? 'localhost',
+          port: 4004,
+        },
+      },
     ]),
   ],
   controllers: [
@@ -83,6 +86,7 @@ import { PostGatewayController } from './controllers/post.gateway.controller';
     ClassManagementGatewayController,
     UserController,
     PostGatewayController,
+    SocketForwardingController,
   ],
   providers: [
     {

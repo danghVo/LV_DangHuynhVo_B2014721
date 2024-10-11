@@ -62,6 +62,8 @@ export class PostGatewayController {
       return { data: { error: 'Resource not found' } };
     }
 
+    console.log(files);
+
     const response = this.postService.send(
       { cmd: 'create-post' },
       { createPostDto, classUuid, ownerUuid: req.user.uuid, files },

@@ -15,7 +15,6 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
-import { Public } from 'src/decorator/public.decorator';
 import { ServiceHealth } from 'src/decorator/serviec-healths';
 import { CreateClassDto, UpdateClassDto } from 'src/dto/class';
 import { Role } from 'src/guard/Role/role.decorator';
@@ -35,9 +34,16 @@ export class ClassGatewayController {
   }
 
   @Get('all')
-  @Public()
-  getUuidOfClasses() {
-    return this.classService.send({ cmd: 'get-classes-uuid' }, {});
+  async getUuidOfClasses() {
+    LoggerUtil.log('Get all classes uuid', 'Class:GetAllClasses');
+    const uuidOfClasses = this.classService.send(
+      { cmd: 'get-classes-uuid' },
+      {},
+    );
+
+    LoggerUtil.log('Get all classes uuid', 'Class:GetAllClasses');
+
+    return { data: await lastValueFrom(uuidOfClasses) };
   }
 
   @Role('TEACHER')
@@ -58,7 +64,7 @@ export class ClassGatewayController {
     return { data: await lastValueFrom(response) };
   }
 
-  @Get('join/all')
+  @Get('/')
   async getClasses(
     @Req() req: Request & { user: { uuid: string } },
     @Param('filter') filter: string,
@@ -121,7 +127,7 @@ export class ClassGatewayController {
     return { data: await lastValueFrom(response) };
   }
 
-  @Get('/:classUuid')
+  @Get(':classUuid')
   async getClassDetail(
     @Param('classUuid') classUuid: string,
     @Req() req: Request & { user: { uuid: string } },

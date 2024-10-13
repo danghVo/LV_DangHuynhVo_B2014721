@@ -1,0 +1,164 @@
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: SupEdu
+    volumes:
+      - ./volume/postgres:/var/lib/postgresql/data
+    networks:
+      - mircroservice
+
+  mongo:
+    container_name: mongodb
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: clustering
+    volumes:
+      - ./mongo.init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./volume/mongo:/data/db
+    networks:
+      - mircroservice
+
+  # mongo-express:
+  #   image: mongo-express
+  #   restart: always
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+  #     ME_CONFIG_MONGODB_URL: mongodb://mongo:admin@mongo:27017/
+  #     ME_CONFIG_BASICAUTH: false
+  #   networks:
+  #     - mircroservice
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - mircroservice
+
+  apigateway:
+    container_name: apigateway
+    build: 
+      context: ./apigateway
+      args:
+        SERVICE_NAME: apigateway
+    environment:
+      - REDIS_HOST=redis
+      - CLASS_HOST=class
+      - CLASSMANAGER_HOST=classmanager
+      - AUTH_HOST=auth
+      - POST_HOST=post
+      - POST_HOST=post
+      - USER_HOST=user
+      - NOTIFICATION_HOST=notification
+    ports:
+      - "3000:3000"
+    networks:
+      - mircroservice
+
+  auth:
+    container_name: auth_service
+    build: 
+      context: ./auth
+      args:
+        SERVICE_NAME: auth
+    environment:
+      - REDIS_HOST=redis
+      - HOST=auth
+    networks:
+      - mircroservice
+
+  class:
+    container_name: class_service
+    build: 
+      context: ./class
+      args:
+        SERVICE_NAME: class
+    environment:
+      - REDIS_HOST=redis
+      - APIGATEWAY_HOST=apigateway
+      - HOST=class
+    networks:
+      - mircroservice
+
+  classmanagement:
+    container_name: classmanagement_service
+    build: 
+      context: ./classmanagement
+      args:
+        SERVICE_NAME: classmanagement
+    environment:
+      - REDIS_HOST=redis
+      - API_GATEWAY_HOST=apigateway
+      - HOST=classmanagement
+    networks:
+      - mircroservice
+
+  post:
+    container_name: post_service
+    build: 
+      context: ./post
+      args:
+        SERVICE_NAME: post
+    environment:
+      - HOST=post
+      - NOTIFICATION_HOST=notification
+      - API_GATEWAY_HOST=apigateway
+    networks:
+      - mircroservice
+
+  user:
+    container_name: user_service
+    build: 
+      context: ./user
+      args:
+        SERVICE_NAME: user
+    environment:
+      - HOST=user
+    networks:
+      - mircroservice
+
+  clustering:
+    container_name: clustering_service
+    build: 
+      context: ./clustering
+      args:
+        SERVICE_NAME: clustering
+    environment:
+      - REDIS_HOST=redis
+      - MONGO_HOST=mongo:27017
+      - MONGO_USER=mongo
+      - MONGO_PASSWORD=admin
+    networks:
+      - mircroservice
+
+  notification:
+    container_name: notification_service
+    build: 
+      context: ./notification
+      args:
+        SERVICE_NAME: notification
+    environment:
+      - REDIS_HOST=redis
+      - API_GATEWAY_HOST=apigateway
+      - HOST=notification
+    networks:
+      - mircroservice
+
+networks:
+  mircroservice:
+    driver: bridge

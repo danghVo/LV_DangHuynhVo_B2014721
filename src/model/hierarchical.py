@@ -2,6 +2,15 @@ import json
 from utils.distance_utils import Distance
 from utils.json_encoder import json_encoder
 
+'''
+Cluster type:
+    - point: string[]
+    - name: string
+
+Iteration:
+    - 
+'''
+
 
 class Hierarchical: 
     def __init__(self, linked_method):
@@ -10,26 +19,29 @@ class Hierarchical:
     def distance(self, distance_type, a, b):
         distanceFormula = Distance(distance_type).calculate
 
-        if(isinstance(a[0], list) == False):
+        if(not isinstance(a[0], list)):
             a = [a]
 
-        if(isinstance(b[0], list) == False):
+        if(not isinstance(b[0], list)):
             b = [b]
 
         if self.linked_method == 'single':
-            return min(distanceFormula(x, y) for x, y in zip(a, b))
+            return min(distanceFormula(x, y) for x in a for y in b)
         elif self.linked_method == 'complete':
-            return max(distanceFormula(x, y) for x, y in zip(a, b))
+            return max(distanceFormula(x, y) for x in a for y in b)
         elif self.linked_method == 'average':
-            return sum(distanceFormula(x, y) for x, y in zip(a, b)) / len(b)
+            return sum(distanceFormula(x, y) for x in a for y in b) / (len(a) * len(b))
+        elif self.linked_method == 'centroid':
+            centroid_a = [sum(x) / len(x) for x in zip(*a)]
+            centroid_b = [sum(x) / len(x) for x in zip(*b)]
+            return distanceFormula(centroid_a, centroid_b)
 
     def fit(self, data, distance_type, data_name):
         # Random centroid
         clusters = len(data)
-        labels = []
         self.iteration_data = []
         data_values = data.values.tolist()
-        data_name = data_name.tolist()
+        labels = data_name.copy()
 
         while clusters > 1:
             min_distance = float('inf')
@@ -49,6 +61,7 @@ class Hierarchical:
                         min_distance = distance
                         min_index = (i, j)
 
+            # Get new cluster created
             new_cluster = []
             if isinstance(data_values[min_index[0]][0], list):
                 new_cluster.extend(data_values[min_index[0]])
@@ -60,23 +73,35 @@ class Hierarchical:
 
             new_cluster_name = data_name[min_index[0]] + "-" + data_name[min_index[1]]
 
+            labels.append(new_cluster_name)
+            # New cluster data
+            index_cluster_1 = labels.index(data_name[min_index[0]])
+            index_cluster_2 = labels.index(data_name[min_index[1]])
+            total_point = len(labels[index_cluster_1].split('-')) + len(labels[index_cluster_2].split('-'))
+
+            # Update cluster data
             data_values.pop(min_index[1])
             data_values.pop(min_index[0])
             data_values.append(new_cluster)
 
+            # Update cluster name
             data_name.pop(min_index[1])
             data_name.pop(min_index[0])
             data_name.append(new_cluster_name)
 
             clusters -= 1
 
-            data_values_snapshot = data_values.copy()
             data_name_snapshot = data_name.copy()
             self.iteration_data.append({
                 "iteration": len(self.iteration_data) + 1,
                 "distance_matrix": distances_matrix,
-                "cluster_data": data_values_snapshot,
-                "cluster_name": data_name_snapshot
+                "cluster": data_name_snapshot,
+                "new_cluster": {
+                    "distance": min_distance,
+                    "index_cluster_1": index_cluster_1,
+                    "index_cluster_2": index_cluster_2,
+                    "total_point": total_point,
+                }
             })
 
         self.labels = labels
@@ -99,3 +124,4 @@ class Hierarchical:
         }
 
         return json.dumps(clusteringData, cls=json_encoder)
+    

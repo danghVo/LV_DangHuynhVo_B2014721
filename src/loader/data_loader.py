@@ -14,10 +14,10 @@ class DataLoader:
         scaler = StandardScaler() 
         scaled_data = scaler.fit_transform(data)
 
-        return data
+        return scaled_data
 
     # Load the dataset
-    def load_data(self, csv_file_buffer):
+    def load_data(self, csv_file_buffer, process_categorical=False):
         try:
             # Decode the base64 string to bytes
             csv_file_buffer = base64.b64decode(csv_file_buffer)
@@ -31,7 +31,7 @@ class DataLoader:
             data.drop(index=0)
 
             # Delete first column (data's name)
-            self.data_name = data.iloc[:, 0]
+            self.data_name =  [str(element) for element in data.iloc[:, 0]]
             data.drop(columns=data.columns[0], axis=1, inplace=True)
 
             # Remove column have invalid type
@@ -39,8 +39,7 @@ class DataLoader:
             for col, type in zip(cols, data.dtypes):
                 if(pd.api.types.is_numeric_dtype(type)):
                     data[[col]] = self.preprocess_data(data[[col]])
-                else:
-                    del data[col]
+                else: del data[col]
 
             # Return the dataset
             return data

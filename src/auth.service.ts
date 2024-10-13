@@ -8,7 +8,6 @@ import * as argon2 from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { randomBytes } from 'crypto';
 import { PrismaService } from './utils/prisma.service';
 import { RpcException } from '@nestjs/microservices';
 
@@ -82,8 +81,6 @@ export class AuthService {
       // hash password
       const hashPassword = await argon2.hash(signUpDto.password);
 
-      const verifyToken = randomBytes(64).toString('hex');
-
       // create user
       const newUser = await this.prisma.user.create({
         data: {
@@ -92,11 +89,8 @@ export class AuthService {
           name: signUpDto.name,
           role: signUpDto.role,
           age: signUpDto.age,
-          verifyToken,
         },
       });
-
-      this.deleteUnverifyUser(newUser.uuid);
 
       return { uuid: newUser.uuid, email: newUser.email, name: newUser.name };
     } catch (error) {
@@ -113,28 +107,6 @@ export class AuthService {
     }
   }
 
-  async deleteUnverifyUser(uuid: string) {
-    return new Promise((resolve, reject) => {
-      console.time();
-      setTimeout(
-        async () => {
-          console.timeEnd();
-          console.log('delete user');
-          const user = await this.prisma.user.findFirst({
-            where: { isVerify: false, uuid },
-          });
-
-          if (!user?.isVerify) {
-            await this.prisma.user.delete({
-              where: { uuid },
-            });
-          }
-        },
-        5 * 60 * 1000,
-      );
-    });
-  }
-
   async signIn(signInDto: SignInDto) {
     // checking if user exists
     const userExisted = await this.prisma.user.findUnique({
@@ -145,18 +117,12 @@ export class AuthService {
       throw new RpcException({ error: 'Email không tồn tại', status: 404 });
     }
 
-    if (!userExisted.isVerify) {
-      throw new RpcException({
-        error: 'Email chưa được xác nhận',
-        status: 403,
-      });
-    }
-
     // hash password
     const passwordChecking = await argon2.verify(
       userExisted.password,
       signInDto.password,
     );
+
     if (!passwordChecking) {
       throw new RpcException({
         error: 'Mật khẩu không chính xác',
@@ -177,58 +143,26 @@ export class AuthService {
     const access_token = await this.signToken(payload, secret);
     const refresh_token = await this.signToken(payload, secretRefesh, '1d');
 
+    await this.prisma.user.update({
+      where: { uuid: userExisted.uuid },
+      data: { refreshToken: refresh_token },
+    });
+
     return { access_token, refresh_token };
   }
 
-  async verifyMail(userUuid: string, token: string) {
+  async logout(uuid: string) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { uuid: userUuid },
-        select: { verifyToken: true },
-      });
-
-      if (user.verifyToken !== token) {
-        throw new RpcException({ error: 'Token không hợp lệ', status: 400 });
-      }
-
       await this.prisma.user.update({
-        where: { uuid: userUuid },
-        data: { isVerify: true, verifyToken: null },
+        where: { uuid },
+        data: { refreshToken: null },
       });
 
-      // this.socket.server.emit('verify', { status: 'success', message: 'Xác nhận thành công' });
-
-      return true;
+      return { message: 'Đăng xuất thành công' };
     } catch (error) {
       console.error(error);
 
-      return false;
-    }
-  }
-
-  async resendVerifyMail(uuid: string) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { uuid },
-        select: { email: true },
-      });
-
-      const verifyToken = randomBytes(64).toString('hex');
-      await this.prisma.user.update({
-        where: { uuid },
-        data: { verifyToken },
-      });
-
-      // await this.mailService.mailConfirm(user.email, uuid, verifyToken);
-      return { message: 'Đã gửi lại mail xác nhận' };
-    } catch (error) {
-      console.error(error);
-
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new RpcException({ error: 'Email không tồn tại', status: 404 });
-        }
-      } else throw new RpcException({ error: 'Có lỗi xảy ra', status: 500 });
+      throw new RpcException({ error: 'Có lỗi xảy ra', status: 500 });
     }
   }
 }

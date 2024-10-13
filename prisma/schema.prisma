@@ -17,8 +17,6 @@ model User {
   refreshToken       String?
   createAt           DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
-  isVerify           Boolean              @default(false)
-  verifyToken        String?
   role               UserRole
   class              Class[]
   comment            Comment[]

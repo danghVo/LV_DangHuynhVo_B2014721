@@ -31,8 +31,8 @@ export class AuthController {
   }
 
   @MessagePattern({ cmd: 'logout' })
-  async logout(@Session() session: Record<string, any>) {
-    session.destroy();
+  async logout(@Body() userUuid: string) {
+    await this.authService.logout(userUuid);
 
     return { message: 'Đăng xuất thành công' };
   }

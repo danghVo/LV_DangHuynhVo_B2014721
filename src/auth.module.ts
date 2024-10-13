@@ -20,6 +20,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           port: 6379,
         },
       },
+      {
+        name: 'API_GATEWAY',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.API_GATEWAY_HOST ?? 'localhost',
+          port: 3000,
+        },
+      },
     ]),
   ],
   controllers: [AuthController],

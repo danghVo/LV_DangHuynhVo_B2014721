@@ -207,7 +207,9 @@ export class ClassService {
         },
       });
 
-      if (userUuid !== classExist.owner.uuid) {
+      const isOwner = userUuid === classExist.owner.uuid;
+
+      if (!isOwner) {
         delete classExist.requireApprove;
       }
 
@@ -221,10 +223,10 @@ export class ClassService {
         ...classExist,
         status: joinStatus ? joinStatus.status : 'UNJOINED',
         isPassword: classExist.password ? true : false,
-        showPassword:
-          userUuid === classExist.ownerUuid ? classExist.password : undefined,
-        isOwner: classExist.owner.uuid === userUuid,
-        posts: joinStatus?.status !== 'JOINED' ? [] : classExist.posts,
+        showPassword: isOwner ? classExist.password : undefined,
+        isOwner,
+        posts:
+          joinStatus?.status === 'JOINED' || isOwner ? classExist.posts : [],
         theme: {
           from: classExist.theme.split(' ')[0].slice(6, -1),
           to: classExist.theme.split(' ')[1].slice(4, -1),

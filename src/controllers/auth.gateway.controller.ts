@@ -50,8 +50,6 @@ export class AuthGatewayController {
       throw new HttpException(error, 403);
     } else {
       LoggerUtil.log(`${payload.email} wrote to database`, 'Signup Process');
-      // this.mailClient.send({ cmd: 'send-mail-confirm' }, { email: data.email });
-      LoggerUtil.log(`Send OTP to ${data.email}`, 'Signup Process');
 
       return { message: 'Check your email for confirmation' };
     }
@@ -62,31 +60,23 @@ export class AuthGatewayController {
   async signIn(@Body() payload: SignInDto) {
     LoggerUtil.log(`${payload.email} is signing in`, 'Reviced Signin Request');
 
-    const response = this.authClient.send<{
-      accessToken: string;
-      refreshToken: string;
-    }>({ cmd: 'signin' }, payload);
+    const response = await lastValueFrom(
+      this.authClient.send({ cmd: 'signin' }, payload),
+    );
 
     await checkResponseError(response, { context: 'Signin Process' });
 
-    response.subscribe((message) => {
-      this.redisClient.send(
-        { cmd: 'set' },
-        { key: payload.email, value: message.refreshToken },
-      );
+    this.redisClient.send(
+      { cmd: 'set' },
+      { key: payload.email, value: response.refreshToken },
+    );
 
-      LoggerUtil.log(
-        `Store refresh token of ${payload.email}`,
-        'Stored Refresh Token',
-      );
-    });
+    LoggerUtil.log(
+      `Store refresh token of ${payload.email}`,
+      'Stored Refresh Token',
+    );
 
-    const responseRetrive = (await lastValueFrom(response)) as {
-      accessToken: string;
-      refreshToken: string;
-    };
-
-    return { data: { accessToken: responseRetrive.accessToken } };
+    return { data: { accessToken: response.accessToken } };
   }
 
   @Public()

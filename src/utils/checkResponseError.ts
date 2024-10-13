@@ -2,24 +2,19 @@ import { HttpException } from '@nestjs/common';
 import { lastValueFrom, Observable } from 'rxjs';
 import { LoggerUtil } from './Logger';
 
-export default async function checkResponseError<T>(
-  response: Observable<T>,
-  loggerInfo: { context: string },
-) {
-  const responseRetrive = (await lastValueFrom(response)) as {
+export default async function checkResponseError(
+  response: {
     status: string;
     message: {
       error: string;
       status: number;
     };
-  };
+  },
+  loggerInfo: { context: string },
+) {
+  if (response.status === 'error') {
+    LoggerUtil.error(response.message.error, loggerInfo.context);
 
-  if (responseRetrive.status === 'error') {
-    LoggerUtil.error(responseRetrive.message.error, loggerInfo.context);
-
-    throw new HttpException(
-      responseRetrive.message.error,
-      responseRetrive.message.status,
-    );
+    throw new HttpException(response.message.error, response.message.status);
   }
 }

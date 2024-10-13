@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -31,7 +32,7 @@ export class ClassManagementGatewayController {
     );
   }
 
-  @Get('/:classUuid/joinClass')
+  @Post('/join/:classUuid')
   async joinClass(
     @Req() req: Request & { user: { uuid: string } },
     @Param('classUuid') classUuid: string,
@@ -41,41 +42,46 @@ export class ClassManagementGatewayController {
       `${req.user.uuid} joining ${classUuid}`,
       'ClassManamagement:JoinClass',
     );
-    const response = this.classManagementService.send(
-      { cmd: 'join-class' },
-      { studentUuid: req.user.uuid, classUuid: classUuid, password },
+    const response = await lastValueFrom(
+      this.classManagementService.send(
+        { cmd: 'join-class' },
+        { studentUuid: req.user.uuid, classUuid: classUuid, password },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'ClassManamagement:JoinClass',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
-  @Get('/:classUuid/responseJoinRequest')
+  @Patch('/:classUuid/approve/:studentUuid')
   async responseJoinRequest(
     @Req() req: Request & { user: { uuid: string } },
     @Param('classUuid') classUuid: string,
-    @Body() payload: { approve: boolean; studentUuid: string },
+    @Param(' studentUuid') studentUuid: string,
+    @Body() payload: { approve: boolean },
   ) {
     LoggerUtil.log(
-      `${req.user.uuid} response join request of ${payload.studentUuid}`,
+      `${req.user.uuid} response join request of ${studentUuid}`,
       'ClassManamagement:ResponseJoinRequest',
     );
-    const response = this.classManagementService.send(
-      { cmd: 'response-join-request' },
-      { ownerUuid: req.user.uuid, classUuid, ...payload },
+    const response = await lastValueFrom(
+      this.classManagementService.send(
+        { cmd: 'response-join-request' },
+        { ownerUuid: req.user.uuid, classUuid, studentUuid, ...payload },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'ClassManamagement:ResponseJoinRequest',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
-  @Post('/:classUuid/addMember')
+  @Post('/:classUuid/member')
   @Role('TEACHER')
   @UseGuards(RoleGuard)
   async addMemeber(
@@ -87,43 +93,50 @@ export class ClassManagementGatewayController {
       `Add ${email} to ${classUuid} `,
       'ClassManamagement:AddMember',
     );
-    const response = this.classManagementService.send(
-      { cmd: 'add-member' },
-      { email, ownerUuid: req.user.uuid, classUuid },
+    const response = await lastValueFrom(
+      this.classManagementService.send(
+        { cmd: 'add-member' },
+        { email, ownerUuid: req.user.uuid, classUuid },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'ClassManamagement:AddMember',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
-  @Patch('/:classUuid/removeMember')
+  @Delete('/:classUuid/member/:studentUuid')
   @Role('TEACHER')
   @UseGuards(RoleGuard)
   async removeMember(
     @Req() req: Request & { user: { uuid: string } },
-    @Param('classUuid') classUuid: string,
-    @Body('studentUuid') studentUuid: string,
+    @Param() params: { classUuid: string; studentUuid: string },
   ) {
     LoggerUtil.log(
-      `Remove ${studentUuid} from ${classUuid}`,
+      `Remove ${params.studentUuid} from ${params.classUuid}`,
       'ClassManamagement:RemoveMember',
     );
-    const response = this.classManagementService.send(
-      { cmd: 'remove-member' },
-      { studentUuid, ownerUuid: req.user.uuid, classUuid: classUuid },
+    const response = await lastValueFrom(
+      this.classManagementService.send(
+        { cmd: 'remove-member' },
+        {
+          studentUuid: params.studentUuid,
+          ownerUuid: req.user.uuid,
+          classUuid: params.classUuid,
+        },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'ClassManamagement:RemoveMember',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
-  @Get('/:classUuid/leaveClass')
+  @Delete('/leave/:classUuid')
   async leaveClass(
     @Param('classUuid') classUuid: string,
     @Req() req: Request & { user: { uuid: string } },
@@ -132,18 +145,20 @@ export class ClassManagementGatewayController {
       `${req.user.uuid} leave ${classUuid} `,
       'ClassManamagement:LeaveClass',
     );
-    const response = this.classManagementService.send(
-      { cmd: 'leave-class' },
-      {
-        studentUuid: req.user.uuid,
-        classUuid,
-      },
+    const response = await lastValueFrom(
+      this.classManagementService.send(
+        { cmd: 'leave-class' },
+        {
+          studentUuid: req.user.uuid,
+          classUuid,
+        },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'ClassManamagement:LeaveClass',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 }

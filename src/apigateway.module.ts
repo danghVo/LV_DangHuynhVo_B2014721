@@ -30,14 +30,6 @@ import { SocketForwardingController } from './controllers/socket.forwarding.cont
         },
       },
       {
-        name: 'REDIS_SERVICE',
-        transport: Transport.REDIS,
-        options: {
-          host: process.env.REDIS_HOST ?? 'localhost',
-          port: 6379,
-        },
-      },
-      {
         name: 'CLASS_SERVICE',
         transport: Transport.TCP,
         options: {
@@ -51,6 +43,14 @@ import { SocketForwardingController } from './controllers/socket.forwarding.cont
         options: {
           host: process.env.CLASSMANAGEMENT_HOST ?? 'localhost',
           port: 4003,
+        },
+      },
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.NOTIFICATION_HOST ?? 'localhost',
+          port: 4004,
         },
       },
       {
@@ -70,11 +70,11 @@ import { SocketForwardingController } from './controllers/socket.forwarding.cont
         },
       },
       {
-        name: 'NOTIFICATION_SERVICE',
-        transport: Transport.TCP,
+        name: 'REDIS_SERVICE',
+        transport: Transport.REDIS,
         options: {
-          host: process.env.NOTIFICATION_HOST ?? 'localhost',
-          port: 4004,
+          host: process.env.REDIS_HOST ?? 'localhost',
+          port: 6379,
         },
       },
     ]),

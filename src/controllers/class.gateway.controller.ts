@@ -36,14 +36,13 @@ export class ClassGatewayController {
   @Get('all')
   async getUuidOfClasses() {
     LoggerUtil.log('Get all classes uuid', 'Class:GetAllClasses');
-    const uuidOfClasses = this.classService.send(
-      { cmd: 'get-classes-uuid' },
-      {},
+    const uuidOfClasses = await lastValueFrom(
+      this.classService.send({ cmd: 'get-classes-uuid' }, {}),
     );
 
     LoggerUtil.log('Get all classes uuid', 'Class:GetAllClasses');
 
-    return { data: await lastValueFrom(uuidOfClasses) };
+    return { data: uuidOfClasses };
   }
 
   @Role('TEACHER')
@@ -54,14 +53,16 @@ export class ClassGatewayController {
   ) {
     LoggerUtil.log('Get all classes of teacher', 'Class:GetAllOwnClasses');
 
-    const response = this.classService.send(
-      { cmd: 'get-all-own-classes' },
-      { teacherUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'get-all-own-classes' },
+        { teacherUuid: req.user.uuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'Class:GetAllOwnClasses' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get('/')
@@ -74,16 +75,18 @@ export class ClassGatewayController {
       'Class:GetAllClassesOfUser',
     );
 
-    const response = this.classService.send(
-      { cmd: 'get-all-classes-of-user' },
-      { userUuid: req.user.uuid, filter },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'get-all-classes-of-user' },
+        { userUuid: req.user.uuid, filter },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'Class:GetAllClassesOfUser',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Post('/')
@@ -94,14 +97,16 @@ export class ClassGatewayController {
     @Req() req: Request & { user: { uuid: string } },
   ) {
     LoggerUtil.log(`${req.user.uuid} create class`, 'Class:CreateClass');
-    const response = this.classService.send(
-      { cmd: 'create-class' },
-      { ...createClassDto, userUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'create-class' },
+        { ...createClassDto, userUuid: req.user.uuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'Class:CreateClass' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Patch(':classUuid')
@@ -117,14 +122,16 @@ export class ClassGatewayController {
       'Class:UpdateClass',
     );
 
-    const response = this.classService.send(
-      { cmd: 'update-class' },
-      { ...updateClassDto, userUuid: req.user.uuid, classUuid: classUuid },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'update-class' },
+        { ...updateClassDto, userUuid: req.user.uuid, classUuid: classUuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'Class:UpdateClass' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get(':classUuid')
@@ -137,17 +144,19 @@ export class ClassGatewayController {
       'Class:GetClassDetail',
     );
 
-    const response = this.classService.send(
-      { cmd: 'get-class-detail' },
-      {
-        userUuid: req.user.uuid,
-        classUuid,
-      },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'get-class-detail' },
+        {
+          userUuid: req.user.uuid,
+          classUuid,
+        },
+      ),
     );
 
     await checkResponseError(response, { context: 'Class:GetClassDetail' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get('/:classUuid/members')
@@ -160,14 +169,16 @@ export class ClassGatewayController {
       'Class:GetMembersOfClass',
     );
 
-    const response = this.classService.send(
-      { cmd: 'get-members-of-class' },
-      { userUuid: req.user.uuid, classUuid },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'get-members-of-class' },
+        { userUuid: req.user.uuid, classUuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'Class:GetMembersOfClass' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Delete(':classUuid')
@@ -182,14 +193,16 @@ export class ClassGatewayController {
       'Class:DeleteClass',
     );
 
-    const response = this.classService.send(
-      { cmd: 'delete-class' },
-      { userUuid: req.user.uuid, classUuid },
+    const response = await lastValueFrom(
+      this.classService.send(
+        { cmd: 'delete-class' },
+        { userUuid: req.user.uuid, classUuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'Class:DeleteClass' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get(':classUuid/calendar')
@@ -202,13 +215,12 @@ export class ClassGatewayController {
       'Class:GetCalendar',
     );
 
-    const response = this.classService.send(
-      { cmd: 'get-calendar' },
-      { classUuid },
+    const response = await lastValueFrom(
+      this.classService.send({ cmd: 'get-calendar' }, { classUuid }),
     );
 
     await checkResponseError(response, { context: 'Class:GetCalendar' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 }

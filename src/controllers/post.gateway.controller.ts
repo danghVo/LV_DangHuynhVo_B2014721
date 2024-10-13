@@ -25,7 +25,7 @@ import { RoleGuard } from 'src/guard/Role/role.guard';
 import { MarkScoreDto } from 'src/dto/post/markScore.dto';
 import { SubmitExerciseDto } from 'src/dto/post/submitExercise.dto';
 import checkResponseError from 'src/utils/checkResponseError';
-import { last, lastValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 
 @Controller('post')
 export class PostGatewayController {
@@ -62,15 +62,16 @@ export class PostGatewayController {
       return { data: { error: 'Resource not found' } };
     }
 
-    console.log(files);
-
-    const response = this.postService.send(
-      { cmd: 'create-post' },
-      { createPostDto, classUuid, ownerUuid: req.user.uuid, files },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'create-post' },
+        { createPostDto, classUuid, ownerUuid: req.user.uuid, files },
+      ),
     );
+
     await checkResponseError(response, { context: 'PostGateway:CreatePost' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Role('TEACHER')
@@ -96,14 +97,16 @@ export class PostGatewayController {
       return { data: { error: 'Resource not found' } };
     }
 
-    const response = this.postService.send(
-      { cmd: 'update-post' },
-      { updatePostDto, postUuid, files },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'update-post' },
+        { updatePostDto, postUuid, files },
+      ),
     );
 
     await checkResponseError(response, { context: 'PostGateway:UpdatePost' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Role('TEACHER')
@@ -126,14 +129,13 @@ export class PostGatewayController {
       return { data: { error: 'Resource not found' } };
     }
 
-    const response = this.postService.send(
-      { cmd: 'delete-post' },
-      { postUuid },
+    const response = await lastValueFrom(
+      this.postService.send({ cmd: 'delete-post' }, { postUuid }),
     );
 
     await checkResponseError(response, { context: 'PostGateway:DeletePost' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   // exercise
@@ -144,16 +146,15 @@ export class PostGatewayController {
       `Getting all exercise in ${classUuid}`,
       'PostGateway:GetAllExercise',
     );
-    const response = this.postService.send(
-      { cmd: 'get-all-exercise' },
-      { classUuid },
+    const response = await lastValueFrom(
+      this.postService.send({ cmd: 'get-all-exercise' }, { classUuid }),
     );
 
     await checkResponseError(response, {
       context: 'PostGateway:GetAllExercise',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get('/exercise/:postUuid')
@@ -165,13 +166,15 @@ export class PostGatewayController {
       `${req.user.uuid} getting exercise ${postUuid}`,
       'PostGateway:GetExercise',
     );
-    const response = this.postService.send(
-      { cmd: 'get-exercise' },
-      { postUuid, userUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'get-exercise' },
+        { postUuid, userUuid: req.user.uuid },
+      ),
     );
     await checkResponseError(response, { context: 'PostGateway:GetExercise' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Role('TEACHER')
@@ -182,14 +185,13 @@ export class PostGatewayController {
       `Getting all submit in ${postUuid}`,
       'PostGateway:GetAllSubmit',
     );
-    const response = this.postService.send(
-      { cmd: 'get-all-submit' },
-      { postUuid },
+    const response = await lastValueFrom(
+      this.postService.send({ cmd: 'get-all-submit' }, { postUuid }),
     );
 
     await checkResponseError(response, { context: 'PostGateway:GetAllSubmit' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Role('TEACHER')
@@ -212,14 +214,13 @@ export class PostGatewayController {
       return { data: { error: 'Resource not found' } };
     }
 
-    const response = this.postService.send(
-      { cmd: 'get-scores' },
-      { markScoreDto },
+    const response = await lastValueFrom(
+      this.postService.send({ cmd: 'get-scores' }, { markScoreDto }),
     );
 
     await checkResponseError(response, { context: 'PostGateway:MarkScore' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @UseInterceptors(FilesInterceptor('files'))
@@ -234,16 +235,18 @@ export class PostGatewayController {
       `${req.user.uuid} submitting exercise for ${postUuid}`,
       'PostGateway:SubmitExercise',
     );
-    const response = this.postService.send(
-      { cmd: 'submit-exercise' },
-      { submitExerciseDto, files },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'submit-exercise' },
+        { submitExerciseDto, files },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'PostGateway:SubmitExercise',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get('/vote/:voteUuid')
@@ -256,14 +259,16 @@ export class PostGatewayController {
       'PostGateway:GetVote',
     );
 
-    const response = this.postService.send(
-      { cmd: 'get-vote' },
-      { voteUuid, userVotedUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'get-vote' },
+        { voteUuid, userVotedUuid: req.user.uuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'PostGateway:GetVote' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Put('/vote/:voteUuid')
@@ -276,14 +281,16 @@ export class PostGatewayController {
       `${req.user.uuid} voting for ${voteUuid}`,
       'PostGateway:Vote',
     );
-    const response = this.postService.send(
-      { cmd: 'vote' },
-      { voteUuid, userVotedUuid: req.user.uuid, optionUuid: body.optionUuid },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'vote' },
+        { voteUuid, userVotedUuid: req.user.uuid, optionUuid: body.optionUuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'PostGateway:Vote' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get('/comment/:postUuid')
@@ -292,14 +299,13 @@ export class PostGatewayController {
       `Getting comments for ${postUuid}`,
       'PostGateway:GetComments',
     );
-    const response = this.postService.send(
-      { cmd: 'get-comments' },
-      { postUuid },
+    const response = await lastValueFrom(
+      this.postService.send({ cmd: 'get-comments' }, { postUuid }),
     );
 
     await checkResponseError(response, { context: 'PostGateway:GetComments' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Post('/comment/:postUuid')
@@ -312,13 +318,15 @@ export class PostGatewayController {
       `${req.user.uuid} commenting on ${postUuid}`,
       'PostGateway:Comment',
     );
-    const response = this.postService.send(
-      { cmd: 'post-comment' },
-      { commentDto, postUuid, userCommentedUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'post-comment' },
+        { commentDto, postUuid, userCommentedUuid: req.user.uuid },
+      ),
     );
     await checkResponseError(response, { context: 'PostGateway:Comment' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get(':classUuid/task')
@@ -327,28 +335,29 @@ export class PostGatewayController {
     @Param('classUuid') classUuid: string,
   ) {
     LoggerUtil.log(`Getting task in ${classUuid}`, 'PostGateway:GetTaskInDate');
-    const response = this.postService.send(
-      { cmd: 'get-task-in-date' },
-      { classUuid, date: query.date },
+    const response = await lastValueFrom(
+      this.postService.send(
+        { cmd: 'get-task-in-date' },
+        { classUuid, date: query.date },
+      ),
     );
     await checkResponseError(response, {
       context: 'PostGateway:GetTaskInDate',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get(':postUuid/check')
   async checkExistPost(@Param('postUuid') postUuid: string) {
     LoggerUtil.log(`Checking post ${postUuid}`, 'PostGateway:CheckExistPost');
-    const response = this.postService.send(
-      { cmd: 'check-post-exist' },
-      { postUuid },
+    const response = await lastValueFrom(
+      this.postService.send({ cmd: 'check-post-exist' }, { postUuid }),
     );
     await checkResponseError(response, {
       context: 'PostGateway:CheckExistPost',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 }

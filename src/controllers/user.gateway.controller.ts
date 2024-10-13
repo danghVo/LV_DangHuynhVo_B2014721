@@ -29,28 +29,29 @@ export class UserController {
       'UserGateway:Profile',
     );
 
-    const response = this.userService.send(
-      { cmd: 'user-profile' },
-      { userUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.userService.send(
+        { cmd: 'user-profile' },
+        { userUuid: req.user.uuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'UserGateway:Profile' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Get('uuid')
   async getUuid(@Query() query: { email: string }) {
     LoggerUtil.log(`Getting uuid of ${query.email}`, 'UserGateway:GetUuid');
 
-    const response = this.userService.send(
-      { cmd: 'user-get-uuid' },
-      { email: query.email },
+    const response = await lastValueFrom(
+      this.userService.send({ cmd: 'user-get-uuid' }, { email: query.email }),
     );
 
     await checkResponseError(response, { context: 'UserGateway:GetUuid' });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @Put('changePassword')
@@ -63,16 +64,18 @@ export class UserController {
       'UserGateway:ChangePassword',
     );
 
-    const response = this.userService.send(
-      { cmd: 'user-change-password' },
-      { userUuid: req.user.uuid, passwordChagneDto },
+    const response = await lastValueFrom(
+      this.userService.send(
+        { cmd: 'user-change-password' },
+        { userUuid: req.user.uuid, passwordChagneDto },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'UserGateway:ChangePassword',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 
   @UseInterceptors(FileInterceptor('file'))
@@ -87,15 +90,17 @@ export class UserController {
       'UserGateway:UpdateProfile',
     );
 
-    const response = this.userService.send(
-      { cmd: 'user-update-profile' },
-      { profileDto, userUuid: req.user.uuid, avatar },
+    const response = await lastValueFrom(
+      this.userService.send(
+        { cmd: 'user-update-profile' },
+        { profileDto, userUuid: req.user.uuid, avatar },
+      ),
     );
 
     await checkResponseError(response, {
       context: 'UserGateway:UpdateProfile',
     });
 
-    return { data: await lastValueFrom(response) };
+    return { data: response };
   }
 }

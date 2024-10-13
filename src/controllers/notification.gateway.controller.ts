@@ -16,6 +16,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import checkResponseError from 'src/utils/checkResponseError';
 import { LoggerUtil } from 'src/utils/Logger';
+import { lastValueFrom } from 'rxjs';
 
 @Controller('notifications')
 export class NotificationGatewayController {
@@ -26,9 +27,11 @@ export class NotificationGatewayController {
   @Get('/all')
   async getNotification(@Req() req: Request & { user: { uuid: string } }) {
     LoggerUtil.log('Get all notification', 'NotificationGateway:GetNoti');
-    const response = this.notificationService.send(
-      { cmd: 'get-all' },
-      { userUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.notificationService.send(
+        { cmd: 'get-all' },
+        { userUuid: req.user.uuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'NotifiGateway:GetNoti' });
@@ -43,9 +46,11 @@ export class NotificationGatewayController {
   ) {
     LoggerUtil.log('Read notification', 'NotificationGateway:ReadNoti');
 
-    const response = this.notificationService.send(
-      { cmd: 'readed' },
-      { userUuid: req.user.uuid, notifyUuid },
+    const response = await lastValueFrom(
+      this.notificationService.send(
+        { cmd: 'readed' },
+        { userUuid: req.user.uuid, notifyUuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'NotifiGateway:ReadNoti' });
@@ -60,9 +65,11 @@ export class NotificationGatewayController {
   ) {
     LoggerUtil.log('Delete notification', 'NotificationGateway:DeleteNoti');
 
-    const response = this.notificationService.send(
-      { cmd: 'delete' },
-      { userUuid: req.user.uuid, notifyUuid },
+    const response = await lastValueFrom(
+      this.notificationService.send(
+        { cmd: 'delete' },
+        { userUuid: req.user.uuid, notifyUuid },
+      ),
     );
 
     await checkResponseError(response, { context: 'NotifiGateway:DeleteNoti' });
@@ -78,9 +85,11 @@ export class NotificationGatewayController {
       'Delete all notification',
       'NotificationGateway:DeleteAllNoti',
     );
-    const response = this.notificationService.send(
-      { cmd: 'clear' },
-      { userUuid: req.user.uuid },
+    const response = await lastValueFrom(
+      this.notificationService.send(
+        { cmd: 'clear' },
+        { userUuid: req.user.uuid },
+      ),
     );
 
     await checkResponseError(response, {

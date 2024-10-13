@@ -9,9 +9,14 @@ import {
   LeaveClassPayload,
 } from './type/classManagement.type';
 
-@Controller('class-management')
+@Controller()
 export class ClassManagementController {
   constructor(private classManagementService: ClassManagementService) {}
+
+  @MessagePattern({ cmd: 'ping' })
+  async ping() {
+    return 'Pong';
+  }
 
   @MessagePattern({ cmd: 'join-class' })
   async joinClass(@Body() payload: JoinClassPayload) {
